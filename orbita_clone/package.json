@@ -1,0 +1,21 @@
+{
+  "name": "orbita-anti-detect",
+  "version": "1.0.0",
+  "description": "High-performance native anti-detect browser and profile manager",
+  "main": "main.js",
+  "scripts": {
+    "start": "node server.js",
+    "app": "npx electron main.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "https-proxy-agent": "^9.1.0",
+    "proxy-chain": "^3.0.3",
+    "puppeteer-core": "^25.17.0",
+    "socks-proxy-agent": "^10.1.0"
+  },
+  "devDependencies": {
+    "electron": "^45.3.0"
+  }
+}

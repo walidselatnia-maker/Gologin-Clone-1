@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "values": [
+    {
+      "name": "product_name",
+      "group": "metadata",
+      "value": "GoLogin",
+      "source": "pe_version_info ev_b1db477cc3a9f9e6a2279b2c26264586d9cfdb433a8d8ab29be20a8608023fac"
+    },
+    {
+      "name": "product_version",
+      "group": "metadata",
+      "value": "4.0.9",
+      "source": "pe_version_info ev_b1db477cc3a9f9e6a2279b2c26264586d9cfdb433a8d8ab29be20a8608023fac"
+    },
+    {
+      "name": "default_browser",
+      "group": "browser",
+      "value": "Orbita 126",
+      "estimated": true
+    },
+    {
+      "name": "default_os",
+      "group": "fingerprint",
+      "value": "Windows 11",
+      "estimated": true
+    },
+    {
+      "name": "canvas_noise_mode",
+      "group": "fingerprint",
+      "value": "noise",
+      "estimated": true
+    },
+    {
+      "name": "webgl_noise_mode",
+      "group": "fingerprint",
+      "value": "noise",
+      "estimated": true
+    },
+    {
+      "name": "audio_noise_enabled",
+      "group": "fingerprint",
+      "value": true,
+      "estimated": true
+    },
+    {
+      "name": "webrtc_mode",
+      "group": "fingerprint",
+      "value": "altered",
+      "estimated": true
+    },
+    {
+      "name": "default_resolution",
+      "group": "fingerprint",
+      "value": "1920x1080",
+      "estimated": true
+    },
+    {
+      "name": "default_cpu_cores",
+      "group": "hardware",
+      "value": 8,
+      "unit": "cores",
+      "estimated": true
+    },
+    {
+      "name": "default_ram_gb",
+      "group": "hardware",
+      "value": 16,
+      "unit": "GB",
+      "estimated": true
+    },
+    {
+      "name": "default_proxy_type",
+      "group": "proxy",
+      "value": "none",
+      "estimated": true
+    },
+    {
+      "name": "proxy_check_timeout_secs",
+      "group": "proxy",
+      "value": 10,
+      "unit": "s",
+      "estimated": true
+    },
+    {
+      "name": "sidebar_width",
+      "group": "ui",
+      "value": 220,
+      "unit": "px",
+      "estimated": true
+    },
+    {
+      "name": "screenshot_frames_target",
+      "group": "runtime",
+      "value": 120,
+      "unit": "frames",
+      "estimated": true
+    }
+  ]
+}

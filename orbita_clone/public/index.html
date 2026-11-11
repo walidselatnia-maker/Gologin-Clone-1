@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orbita Anti-Detect Browser Manager</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="brand-text">
+          <span class="brand-title">ORBITA</span>
+          <span class="brand-badge">PRO</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-view="profiles">
+          <i class="fa-solid fa-table-cells-large"></i>
+          <span>Profiles</span>
+          <span class="badge" id="sidebar-total-badge">0</span>
+        </a>
+        <a href="#" class="nav-item" data-view="proxies">
+          <i class="fa-solid fa-network-wired"></i>
+          <span>Proxy Manager</span>
+        </a>
+        <a href="#" class="nav-item" data-view="fingerprints">
+          <i class="fa-solid fa-fingerprint"></i>
+          <span>Fingerprints</span>
+        </a>
+        <a href="#" class="nav-item" data-view="engines">
+          <i class="fa-solid fa-microchip"></i>
+          <span>Installed Engines</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="engine-status-card">
+          <div class="status-header">
+            <span class="status-dot"></span>
+            <span class="engine-title">Active Stealth Engine</span>
+          </div>
+          <div class="engine-name" id="engine-status-text">Detecting engine...</div>
+          <div class="engine-sub" id="engine-details-text">C++ Native Hardware Spoofing</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Browser Profiles</h1>
+          <div class="quick-stats">
+            <span class="stat-item"><i class="fa-solid fa-folder"></i> <strong id="stat-total">0</strong> Total</span>
+            <span class="stat-item text-green"><i class="fa-solid fa-circle-play"></i> <strong id="stat-running">0</strong> Running</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button class="btn btn-secondary" id="btn-open-bulk-modal">
+            <i class="fa-solid fa-layer-group"></i> Bulk Add
+          </button>
+          <button class="btn btn-primary" id="btn-create-profile">
+            <i class="fa-solid fa-plus"></i> New Profile
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: PROFILES -->
+      <div id="view-profiles" class="view-pane active">
+        <!-- Controls & Filter Bar -->
+        <div class="toolbar">
+          <div class="toolbar-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-input" placeholder="Search profiles by name, tags, or proxy IP...">
+            <button class="clear-search-btn" id="clear-search-btn" style="display: none;">&times;</button>
+          </div>
+
+          <div class="toolbar-filters">
+            <select id="filter-status" class="filter-select">
+              <option value="all">All Statuses</option>
+              <option value="running">🟢 Running Only</option>
+              <option value="stopped">⚪ Stopped Only</option>
+            </select>
+
+            <select id="filter-engine" class="filter-select">
+              <option value="all">All Engines</option>
+              <option value="orbita">Orbita Engine (GoLogin)</option>
+              <option value="chrome">Chrome (Stealth Flags)</option>
+              <option value="edge">Edge</option>
+              <option value="camoufox">Camoufox</option>
+            </select>
+
+            <button class="btn btn-icon" id="btn-refresh" title="Refresh Profiles">
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bulk Action Bar (Visible when >= 1 profile selected) -->
+        <div class="bulk-bar" id="bulk-bar" style="display: none;">
+          <div class="bulk-info">
+            <i class="fa-solid fa-check-double text-green"></i>
+            <span id="bulk-selected-count">0</span> profiles selected
+          </div>
+
+          <div class="bulk-actions">
+            <button class="btn btn-sm btn-success" id="btn-bulk-start">
+              <i class="fa-solid fa-play"></i> Start Selected
+            </button>
+            <button class="btn btn-sm btn-danger" id="btn-bulk-stop">
+              <i class="fa-solid fa-stop"></i> Stop Selected
+            </button>
+            <button class="btn btn-sm btn-secondary" id="btn-bulk-fp">
+              <i class="fa-solid fa-arrows-rotate"></i> Randomize Fingerprints
+            </button>
+            <button class="btn btn-sm btn-secondary" id="btn-bulk-proxy-modal">
+              <i class="fa-solid fa-network-wired"></i> Set Proxy
+            </button>
+            <button class="btn btn-sm btn-secondary" id="btn-bulk-tag-modal">
+              <i class="fa-solid fa-tag"></i> Add Tag
+            </button>
+            <button class="btn btn-sm btn-danger-outline" id="btn-bulk-delete">
+              <i class="fa-solid fa-trash"></i> Delete
+            </button>
+            <button class="btn btn-sm btn-icon" id="btn-bulk-deselect" title="Deselect All">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Body -->
+        <div class="content-body">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="col-checkbox text-center" style="width: 44px; min-width: 44px;">
+                    <input type="checkbox" id="select-all-checkbox">
+                  </th>
+                  <th class="col-profile" style="min-width: 170px;">Profile</th>
+                  <th class="col-engine" style="width: 120px; min-width: 120px;">Engine</th>
+                  <th class="col-status" style="width: 105px; min-width: 105px;">Status</th>
+                  <th class="col-proxy" style="min-width: 160px;">Proxy</th>
+                  <th class="col-fingerprint" style="min-width: 180px;">Emulated Fingerprint</th>
+                  <th class="col-last-active" style="width: 95px; min-width: 95px;">Last Active</th>
+                  <th class="col-actions text-right" style="width: 215px; min-width: 215px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="profiles-table-body">
+                <tr>
+                  <td colspan="8" class="text-center py-12">
+                    <div class="loading-spinner"></div>
+                    <p class="text-muted mt-2">Loading your anti-detect environments...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: PROXY MANAGER -->
+      <div id="view-proxies" class="view-pane hidden">
+        <div class="view-scroll-content">
+          <!-- Smart Proxy Quick Test & Add Card -->
+          <div class="view-section-card">
+            <div class="view-section-header">
+              <div class="view-section-title">
+                <i class="fa-solid fa-wand-magic-sparkles text-green"></i>
+                <span>Smart Proxy Detector & Latency Tester</span>
+              </div>
+              <button class="btn btn-sm btn-primary" id="btn-create-profile-with-proxy">
+                <i class="fa-solid fa-plus"></i> Create Profile with This Proxy
+              </button>
+            </div>
+            
+            <p class="text-sm text-muted mb-3">
+              Copy any proxy line from your provider and paste it directly. Supports <code>host:port:user:pass</code>, <code>user:pass@host:port</code>, <code>socks5://...</code>, tab, and comma delimiters.
+            </p>
+
+            <div class="smart-paste-input-row mb-3">
+              <div class="smart-input-wrap">
+                <i class="fa-solid fa-paste"></i>
+                <input type="text" id="mgr-proxy-input" class="form-input text-code" placeholder="Paste whole proxy string here (e.g. 185.220.101.5:8080:username:password)...">
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-mgr-test-proxy">
+                <i class="fa-solid fa-bolt"></i> Test Proxy
+              </button>
+              <button type="button" class="btn btn-outline" id="btn-mgr-clear-proxy">Clear</button>
+            </div>
+
+            <!-- Parsed Proxy Details Grid -->
+            <div id="mgr-proxy-details" class="proxy-inputs-card mt-3" style="display: none;">
+              <div class="grid-4" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px;">
+                <div>
+                  <label class="text-xs text-muted">Protocol</label>
+                  <input type="text" id="mgr-px-proto" class="form-input text-code" readonly>
+                </div>
+                <div>
+                  <label class="text-xs text-muted">Host / IP</label>
+                  <input type="text" id="mgr-px-host" class="form-input text-code" readonly>
+                </div>
+                <div>
+                  <label class="text-xs text-muted">Port</label>
+                  <input type="text" id="mgr-px-port" class="form-input text-code" readonly>
+                </div>
+                <div>
+                  <label class="text-xs text-muted">Auth</label>
+                  <input type="text" id="mgr-px-auth" class="form-input text-code" readonly>
+                </div>
+              </div>
+              <div id="mgr-proxy-status" class="proxy-status-message"></div>
+            </div>
+          </div>
+
+          <!-- All Profile Proxies Table -->
+          <div class="view-section-card">
+            <div class="view-section-header">
+              <div class="view-section-title">
+                <i class="fa-solid fa-network-wired text-green"></i>
+                <span>Configured Profile Proxies</span>
+              </div>
+              <span class="text-xs text-muted" id="proxies-count-label">0 Proxies Found</span>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th width="240">Proxy Endpoint</th>
+                    <th width="100">Type</th>
+                    <th width="110">Authentication</th>
+                    <th>Attached Profiles</th>
+                    <th width="140">Leak Shield</th>
+                    <th width="130" class="text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="proxy-manager-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center py-8 text-muted">No proxies configured yet. Add proxies to profiles to view them here.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: FINGERPRINTS -->
+      <div id="view-fingerprints" class="view-pane hidden">
+        <div class="view-scroll-content">
+          <div class="view-section-card">
+            <div class="view-section-header">
+              <div class="view-section-title">
+                <i class="fa-solid fa-shield-halved text-green"></i>
+                <span>Orbita Anti-Detect Engine & Hardware Spoofing Core</span>
+              </div>
+              <span class="status-pill active"><i class="fa-solid fa-circle-check"></i> C++ Native Stealth Active</span>
+            </div>
+            <p class="text-sm text-muted">
+              Unlike JavaScript injection extensions that can be detected by anti-bot systems via prototype tampering, our stealth engine modifies browser C++ source code to provide genuine kernel and GPU-level spoofing.
+            </p>
+          </div>
+
+          <div class="cards-grid-3">
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-palette"></i> Canvas Noise Injection</div>
+                <span class="status-pill active">Native C++</span>
+              </div>
+              <div class="info-card-desc">
+                Injects imperceptible pseudo-random noise directly into Skia rasterizer <code>getImageData()</code> calls. Every profile generates a unique, persistent canvas 2D hash that bypasses Cloudflare & Datadome.
+              </div>
+              <div class="info-card-meta">Layer: C++ Graphics Subsystem · Jitter: 0.0001%</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-cube"></i> WebGL & GPU Shader Masking</div>
+                <span class="status-pill active">Native C++</span>
+              </div>
+              <div class="info-card-desc">
+                Spoofs UNMASKED_VENDOR_WEBGL and UNMASKED_RENDERER_WEBGL strings. Emulates NVIDIA RTX 4080, RTX 3080, and Iris Xe while adding sub-pixel micro-jitter to WebGL 3D buffer readbacks.
+              </div>
+              <div class="info-card-meta">GPU Emulation: Real Direct3D11 / Metal strings</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-volume-high"></i> AudioContext Oscillator Jitter</div>
+                <span class="status-pill active">Native C++</span>
+              </div>
+              <div class="info-card-desc">
+                Adds microscopic mathematical variance to Web Audio API dynamics compressor and oscillator nodes, altering acoustic FFT spectral fingerprints without audible degradation.
+              </div>
+              <div class="info-card-meta">Layer: WebAudio Core · Method: Buffer Float Drift</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-shield-virus"></i> WebRTC IP Leak Shield</div>
+                <span class="status-pill active">Hardened</span>
+              </div>
+              <div class="info-card-desc">
+                Forces all STUN/TURN ICE candidate gathering strictly through the assigned proxy (<code>media.peerconnection.ice.proxy_only</code>). Completely eliminates local LAN and real ISP IP exposure.
+              </div>
+              <div class="info-card-meta">Policy: disable_non_proxied_udp · Zero host leak</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-font"></i> ClientRects & Font Defense</div>
+                <span class="status-pill active">Native C++</span>
+              </div>
+              <div class="info-card-desc">
+                Randomizes DOM subpixel bounding boxes (<code>getClientRects()</code>, <code>getBoundingClientRect()</code>) to defeat CSS and system font measurement fingerprinting.
+              </div>
+              <div class="info-card-meta">Font metric jitter · Prevents typography tracking</div>
+            </div>
+
+            <div class="info-card">
+              <div class="info-card-header">
+                <div class="info-card-title text-green"><i class="fa-solid fa-fingerprint"></i> Navigator Consistency</div>
+                <span class="status-pill active">Synchronized</span>
+              </div>
+              <div class="info-card-desc">
+                Harmonizes User-Agent, platform, hardwareConcurrency, deviceMemory, screen dimensions, color depth, and touch points to ensure 100% internal OS consistency with zero webdriver flags.
+              </div>
+              <div class="info-card-meta">navigator.webdriver = undefined · Perfect harmony</div>
+            </div>
+          </div>
+
+          <!-- Live Anti-Detect Verification Tests -->
+          <div class="view-section-card">
+            <div class="view-section-header">
+              <div class="view-section-title">
+                <i class="fa-solid fa-vial-circle-check text-green"></i>
+                <span>One-Click Live Stealth Testers</span>
+              </div>
+              <span class="text-xs text-muted">Test any profile with these leading anti-detect diagnostic sites</span>
+            </div>
+
+            <div class="cards-grid-3">
+              <div class="info-card">
+                <div class="info-card-title"><i class="fa-solid fa-globe text-green"></i> BrowserLeaks.com</div>
+                <div class="info-card-desc">Comprehensive test suite for WebRTC, IP, Canvas, WebGL, Fonts, AudioContext, and Client Rects.</div>
+                <button class="btn btn-sm btn-secondary mt-2" onclick="testFirstProfileWithUrl('https://browserleaks.com')">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Launch BrowserLeaks
+                </button>
+              </div>
+
+              <div class="info-card">
+                <div class="info-card-title"><i class="fa-solid fa-mask text-green"></i> Whoer.net</div>
+                <div class="info-card-desc">Tests anonymity score %, DNS leak, proxy detection, system time zone vs proxy time zone, and OS fingerprint.</div>
+                <button class="btn btn-sm btn-secondary mt-2" onclick="testFirstProfileWithUrl('https://whoer.net')">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Launch Whoer.net
+                </button>
+              </div>
+
+              <div class="info-card">
+                <div class="info-card-title"><i class="fa-solid fa-robot text-green"></i> PixelScan.net</div>
+                <div class="info-card-desc">Scans for bot signals, automated browser signatures, navigator discrepancies, and proxy trustworthiness.</div>
+                <button class="btn btn-sm btn-secondary mt-2" onclick="testFirstProfileWithUrl('https://pixelscan.net')">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Launch PixelScan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: INSTALLED ENGINES -->
+      <div id="view-engines" class="view-pane hidden">
+        <div class="view-scroll-content">
+          <div class="view-section-card">
+            <div class="view-section-header">
+              <div class="view-section-title">
+                <i class="fa-solid fa-microchip text-green"></i>
+                <span>Detected Browser Engines</span>
+              </div>
+              <span class="text-xs text-muted" id="engines-count-label">Loading engines...</span>
+            </div>
+            <p class="text-sm text-muted">
+              Orbita Anti-Detect automatically discovers native stealth engines installed on your system. Profiles can be launched with any selected engine.
+            </p>
+          </div>
+
+          <div id="engines-cards-container" class="cards-grid-3">
+            <!-- Dynamically populated engine cards -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal 1: Create / Edit Single Profile -->
+  <div class="modal-backdrop" id="profile-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-sliders text-green"></i>
+          <h3 id="modal-title">Create Browser Profile</h3>
+        </div>
+        <button class="modal-close" data-close="profile-modal">&times;</button>
+      </div>
+
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="tab-general">
+          <i class="fa-solid fa-id-card"></i> General
+        </button>
+        <button class="tab-btn" data-tab="tab-proxy">
+          <i class="fa-solid fa-network-wired"></i> Proxy & Network
+        </button>
+        <button class="tab-btn" data-tab="tab-fingerprint">
+          <i class="fa-solid fa-fingerprint"></i> Fingerprint (C++ Spoofing)
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tab: General -->
+        <div class="tab-pane active" id="tab-general">
+          <div class="form-group">
+            <label>Profile Name <span class="required">*</span></label>
+            <input type="text" id="p-name" class="form-input" placeholder="e.g. Account #1 - Amazon Store">
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Target Operating System</label>
+              <select id="p-os" class="form-select">
+                <option value="Windows 11">Windows 11 (Recommended)</option>
+                <option value="macOS Sonoma">macOS Sonoma</option>
+                <option value="Linux Ubuntu">Linux Ubuntu</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Browser Engine</label>
+              <select id="p-engine" class="form-select">
+                <option value="orbita" selected>Orbita Engine (Native GoLogin Chromium)</option>
+                <option value="chrome">Google Chrome (Stealth Flags)</option>
+                <option value="edge">Microsoft Edge (Stealth Flags)</option>
+                <option value="camoufox">Camoufox (Firefox-based Alternative)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Tags (separate with commas)</label>
+            <input type="text" id="p-tags" class="form-input" placeholder="crypto, social, client-a">
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="p-notes" class="form-input" rows="2" placeholder="Optional notes, credentials reminder, or usage details..."></textarea>
+          </div>
+        </div>
+
+        <!-- Tab: Proxy -->
+        <div class="tab-pane" id="tab-proxy">
+          <!-- Smart Copy-Paste Proxy Detector Box -->
+          <div class="smart-paste-container">
+            <div class="smart-paste-title">
+              <i class="fa-solid fa-wand-magic-sparkles text-green"></i>
+              <strong>Smart Copy-Paste Proxy Detector</strong>
+            </div>
+            <p class="text-xs text-muted mb-2">Paste entire proxy string in any format (e.g. <code>host:port:user:pass</code>, <code>socks5://...</code>, <code>user:pass@host:port</code>). Protocol, Host, Port and Auth will auto-fill & test automatically!</p>
+            <div class="smart-paste-input-row">
+              <div class="smart-input-wrap">
+                <i class="fa-solid fa-paste"></i>
+                <input type="text" id="px-smart-input" class="form-input text-code" placeholder="Paste whole proxy line here...">
+              </div>
+              <button type="button" class="btn btn-secondary" id="btn-smart-paste-clear" title="Clear">Clear</button>
+            </div>
+            <div id="smart-paste-alert" class="smart-paste-alert" style="display: none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Connection Protocol</label>
+            <div class="radio-cards">
+              <label class="radio-card">
+                <input type="radio" name="proxy-type" value="none" checked>
+                <div class="radio-card-content">
+                  <i class="fa-solid fa-globe"></i>
+                  <strong>Without Proxy</strong>
+                  <span>Direct home / office IP</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="proxy-type" value="http">
+                <div class="radio-card-content">
+                  <i class="fa-solid fa-lock"></i>
+                  <strong>HTTP / HTTPS</strong>
+                  <span>Standard web proxy</span>
+                </div>
+              </label>
+
+              <label class="radio-card">
+                <input type="radio" name="proxy-type" value="socks5">
+                <div class="radio-card-content">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <strong>SOCKS5</strong>
+                  <span>Encrypted UDP/TCP proxy</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div id="proxy-details-box" style="display: none;" class="proxy-inputs-card">
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Host / IP Address <span class="required">*</span></label>
+                <input type="text" id="px-host" class="form-input" placeholder="185.122.50.12 or proxy.domain.com">
+              </div>
+              <div class="form-group">
+                <label>Port <span class="required">*</span></label>
+                <input type="number" id="px-port" class="form-input" placeholder="8080 or 1080">
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label>Username (Optional)</label>
+                <input type="text" id="px-user" class="form-input" placeholder="proxy username">
+              </div>
+              <div class="form-group">
+                <label>Password (Optional)</label>
+                <input type="password" id="px-pass" class="form-input" placeholder="proxy password">
+              </div>
+            </div>
+
+            <div class="proxy-test-bar">
+              <button type="button" class="btn btn-secondary" id="btn-check-proxy">
+                <i class="fa-solid fa-bolt"></i> Test Proxy
+              </button>
+              <div id="proxy-check-status" class="proxy-status-message"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Fingerprint -->
+        <div class="tab-pane" id="tab-fingerprint">
+          <div class="fp-header-bar">
+            <div>
+              <strong>Native Hardware Emulation</strong>
+              <p class="text-muted text-xs">C++ patched graphics rasterizer & oscillator jitter</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline text-green" id="btn-randomize-fp">
+              <i class="fa-solid fa-arrows-rotate"></i> ⚡ New Random Fingerprint
+            </button>
+          </div>
+
+          <div class="toggle-grid">
+            <label class="toggle-box">
+              <input type="checkbox" id="fp-canvas" checked>
+              <div class="toggle-label">
+                <strong>Canvas Noise Injection</strong>
+                <span>Alters sub-pixel math output in getImageData()</span>
+              </div>
+            </label>
+
+            <label class="toggle-box">
+              <input type="checkbox" id="fp-webgl" checked>
+              <div class="toggle-label">
+                <strong>WebGL Shader Noise</strong>
+                <span>Scrambles 3D render hashes and buffer fingerprints</span>
+              </div>
+            </label>
+
+            <label class="toggle-box">
+              <input type="checkbox" id="fp-audio" checked>
+              <div class="toggle-label">
+                <strong>AudioContext Jitter</strong>
+                <span>Adds imperceptible acoustic noise to AudioBuffer</span>
+              </div>
+            </label>
+
+            <label class="toggle-box">
+              <input type="checkbox" id="fp-webrtc" checked>
+              <div class="toggle-label">
+                <strong>WebRTC Leak Masking</strong>
+                <span>Disables STUN/TURN IP leaks to conceal local network</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="grid-2 mt-4">
+            <div class="form-group">
+              <label>Screen Resolution</label>
+              <select id="fp-res" class="form-select">
+                <option value="1920x1080">1920 x 1080 (Full HD)</option>
+                <option value="2560x1440">2560 x 1440 (2K QHD)</option>
+                <option value="1680x1050">1680 x 1050</option>
+                <option value="1536x864">1536 x 864</option>
+                <option value="1440x900">1440 x 900</option>
+                <option value="1366x768">1366 x 768</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Hardware Specs</label>
+              <div class="flex-row gap-2">
+                <select id="fp-cores" class="form-select">
+                  <option value="4">4 CPU Cores</option>
+                  <option value="8" selected>8 CPU Cores</option>
+                  <option value="12">12 CPU Cores</option>
+                  <option value="16">16 CPU Cores</option>
+                </select>
+                <select id="fp-ram" class="form-select">
+                  <option value="8">8 GB RAM</option>
+                  <option value="16" selected>16 GB RAM</option>
+                  <option value="32">32 GB RAM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Emulated WebGL GPU Renderer</label>
+            <input type="text" id="fp-gpu" class="form-input text-code" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>User-Agent String</label>
+            <input type="text" id="fp-ua" class="form-input text-code">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="profile-modal">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-btn">
+          <i class="fa-solid fa-check"></i> Save Profile
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Bulk Add Profiles -->
+  <div class="modal-backdrop" id="bulk-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-layer-group text-green"></i>
+          <h3>Bulk Create Profiles</h3>
+        </div>
+        <button class="modal-close" data-close="bulk-modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Number of Profiles to Create</label>
+            <input type="number" id="bulk-count" class="form-input" min="1" max="50" value="5">
+          </div>
+          <div class="form-group">
+            <label>Base Name</label>
+            <input type="text" id="bulk-basename" class="form-input" value="Stealth Profile">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Operating System</label>
+            <select id="bulk-os" class="form-select">
+              <option value="Windows 11">Windows 11</option>
+              <option value="macOS Sonoma">macOS Sonoma</option>
+              <option value="Linux Ubuntu">Linux Ubuntu</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Engine</label>
+            <select id="bulk-engine" class="form-select">
+              <option value="orbita" selected>Orbita Engine (Native GoLogin Chromium)</option>
+              <option value="chrome">Google Chrome</option>
+              <option value="camoufox">Camoufox (Firefox)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tags (Optional)</label>
+          <input type="text" id="bulk-tags" class="form-input" placeholder="e.g. bulk, test, campaign-1">
+        </div>
+
+        <div class="form-group">
+          <label>Proxies List (Optional - 1 per line: <code>host:port</code> or <code>host:port:user:pass</code>)</label>
+          <textarea id="bulk-proxies-text" class="form-input text-code" rows="4" placeholder="192.168.1.10:8080&#10;192.168.1.11:8080:username:password"></textarea>
+          <span class="text-muted text-xs">Each profile gets its own unique randomized fingerprint & isolated cache folder.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="bulk-modal">Cancel</button>
+        <button class="btn btn-primary" id="btn-execute-bulk-create">
+          <i class="fa-solid fa-bolt"></i> Generate Profiles
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Bulk Set Proxy -->
+  <div class="modal-backdrop" id="bulk-proxy-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-network-wired text-green"></i>
+          <h3>Assign Proxy to Selected</h3>
+        </div>
+        <button class="modal-close" data-close="bulk-proxy-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Smart Paste Detector for Bulk Proxy -->
+        <div class="smart-paste-container mb-3">
+          <div class="smart-paste-title">
+            <i class="fa-solid fa-wand-magic-sparkles text-green"></i>
+            <strong>Quick Paste Proxy Line</strong>
+          </div>
+          <div class="smart-paste-input-row">
+            <div class="smart-input-wrap">
+              <i class="fa-solid fa-paste"></i>
+              <input type="text" id="bulk-px-smart-paste" class="form-input text-code" placeholder="Paste host:port:user:pass or socks5://...">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Proxy Protocol</label>
+          <select id="bulk-px-mode" class="form-select">
+            <option value="none">Direct (No Proxy)</option>
+            <option value="http">HTTP / HTTPS</option>
+            <option value="socks5">SOCKS5</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Host / IP</label>
+          <input type="text" id="bulk-px-host" class="form-input" placeholder="127.0.0.1">
+        </div>
+        <div class="form-group">
+          <label>Port</label>
+          <input type="number" id="bulk-px-port" class="form-input" placeholder="8080">
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="bulk-px-user" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="bulk-px-pass" class="form-input">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="bulk-proxy-modal">Cancel</button>
+        <button class="btn btn-primary" id="btn-execute-bulk-proxy">Apply Proxy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Bulk Add Tag -->
+  <div class="modal-backdrop" id="bulk-tag-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-tag text-green"></i>
+          <h3>Add Tag to Selected</h3>
+        </div>
+        <button class="modal-close" data-close="bulk-tag-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Tag Name</label>
+          <input type="text" id="bulk-tag-input" class="form-input" placeholder="e.g. verified, priority">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close="bulk-tag-modal">Cancel</button>
+        <button class="btn btn-primary" id="btn-execute-bulk-tag">Add Tag</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="proxy-parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

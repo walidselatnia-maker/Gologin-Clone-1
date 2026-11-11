@@ -1,0 +1,150 @@
+# ==============================================================================
+# Git Ignore Configuration
+# Orbita Anti-Detect Desktop & Workspace
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. User Profiles, Browser Sessions & Sensitive Credentials
+# (CRITICAL: Never commit active user sessions, proxy credentials, or cookies)
+# ------------------------------------------------------------------------------
+**/data/profiles.json
+!**/data/profiles.example.json
+**/data/profiles_data/*
+!**/data/profiles_data/.gitkeep
+test_profile/
+*.config
+orbita.config
+
+# ------------------------------------------------------------------------------
+# 2. Environment Variables & Secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.secret
+
+# ------------------------------------------------------------------------------
+# 3. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.npm/
+
+# ------------------------------------------------------------------------------
+# 4. Large Binaries, Extracted GoLogin Archives & Reverse-Engineered Files
+# (Contains >850MB extracted packages, .asar archives exceeding GitHub limits)
+# ------------------------------------------------------------------------------
+reference/
+**/reference/
+*.asar
+*.exe
+*.dll
+*.dylib
+*.so
+
+# ------------------------------------------------------------------------------
+# 5. Build Artifacts, Compilers & Targets
+# ------------------------------------------------------------------------------
+target/
+**/target/
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/*.rs.bk
+
+# ------------------------------------------------------------------------------
+# 6. Chromium / Browser Caches, Crash Dumps & Metrics
+# ------------------------------------------------------------------------------
+Crashpad/
+**/Crashpad/
+ShaderCache/
+**/ShaderCache/
+GPUPersistentCache/
+**/GPUPersistentCache/
+BrowserMetrics/
+**/BrowserMetrics/
+component_crx_cache/
+**/component_crx_cache/
+*.pma
+*.dmp
+*.sqlite-wal
+*.sqlite-shm
+
+# ------------------------------------------------------------------------------
+# 7. Logs & Diagnostics
+# ------------------------------------------------------------------------------
+*.log
+logs/
+**/logs/
+chrome_debug.log
+build-activity.log
+
+# ------------------------------------------------------------------------------
+# 8. Test Artifacts & Visual Screenshots
+# ------------------------------------------------------------------------------
+*.png
+!public/**/*.png
+!**/public/**/*.png
+coverage/
+.nyc_output/
+
+# ------------------------------------------------------------------------------
+# 9. Local Agent, Workspace Metadata & Internal Transcripts
+# ------------------------------------------------------------------------------
+investigation.cany/
+inbox/
+transcript.json
+usage.json
+feed.json
+craft.json
+
+# ------------------------------------------------------------------------------
+# 10. Operating System & Editor Files
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon\r\r
+._*
+
+# Linux
+*~
+.directory
+
+# IDEs & Editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.sublime-project
+*.sublime-workspace
