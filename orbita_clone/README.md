@@ -26,19 +26,48 @@ A high-performance, local multi-profile anti-detect browser manager replicating 
 ## How to Run
 
 ### Method 1: Desktop App (Electron)
-Double-click:
-```
-D:\Downloads\Clones\Gologin Clone\START_APP.bat
-```
-Or run from terminal:
+
+#### On Linux:
+Run the launcher script:
 ```bash
-cd "D:\Downloads\Clones\Gologin Clone\orbita_clone"
+./START_APP.sh
+```
+Or from terminal:
+```bash
+cd orbita_clone
 npm run app
 ```
 
-### Method 2: Web Interface (Browser)
+#### On Windows:
 Double-click:
+```cmd
+START_APP.bat
 ```
-D:\Downloads\Clones\Gologin Clone\orbita_clone\run_web.bat
+Or run from terminal:
+```cmd
+cd orbita_clone
+npm run app
 ```
-Or open `http://localhost:3030` after starting `node server.js`.
+
+---
+
+### Method 2: Web Interface (Browser)
+
+#### On Linux:
+Run:
+```bash
+./orbita_clone/run_web.sh
+```
+Or manually:
+```bash
+cd orbita_clone
+node server.js
+```
+Then navigate to `http://localhost:3030`.
+
+#### On Windows:
+Double-click:
+```cmd
+orbita_clone\run_web.bat
+```
+Or open `http://localhost:3030` after running `node server.js`.

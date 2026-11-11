@@ -88,3 +88,4 @@ $RECYCLE.BIN/
 !.vscode/settings.json
 !.vscode/extensions.json
 *.sw?
+.sentry-native/

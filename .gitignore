@@ -148,3 +148,4 @@ Icon\r\r
 *.sw?
 *.sublime-project
 *.sublime-workspace
+.sentry-native/

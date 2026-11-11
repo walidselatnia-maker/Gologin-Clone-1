@@ -62,13 +62,19 @@ async function init() {
   
   await loadSystemInfo();
   await loadProfiles();
+  await loadUpdatesStatus();
 
-  // Periodic polling for running status
+  // Periodic polling for running status and background updates
   setInterval(async () => {
     if (!isPolling && !editingProfileId) {
       await loadProfiles(false);
     }
   }, 3000);
+
+  // Periodic check for engine updates (every 5 minutes)
+  setInterval(async () => {
+    await loadUpdatesStatus();
+  }, 300000);
 }
 
 async function loadSystemInfo() {
@@ -279,7 +285,7 @@ function renderProfilesTable() {
                 <i class="fa-solid fa-play"></i> Start
               </button>
             `}
-            <button class="action-icon-btn" onclick="openProfileFolder('${p.id}')" title="Open Data Folder in Explorer">
+            <button class="action-icon-btn" onclick="openProfileFolder('${p.id}')" title="Open Data Folder in File Manager">
               <i class="fa-solid fa-folder-open"></i>
             </button>
             <button class="action-icon-btn" onclick="openEditModal('${p.id}')" title="Edit Profile & Fingerprint">
@@ -440,7 +446,7 @@ async function deleteSingleProfile(id) {
 async function openProfileFolder(id) {
   try {
     await fetch(`/api/profiles/${id}/open-folder`, { method: 'POST' });
-    showToast('Opening folder in Windows Explorer', 'info', 2000);
+    showToast('Opening folder in file manager', 'info', 2000);
   } catch (err) {
     showToast('Could not open folder', 'error');
   }
@@ -895,6 +901,7 @@ function switchView(viewName) {
     if (bulkBtn) bulkBtn.style.display = 'none';
     if (newBtn) newBtn.style.display = 'none';
     renderEnginesView();
+    renderUpdatesNotification();
   }
 }
 
@@ -1418,6 +1425,168 @@ function setupEventListeners() {
   }
 }
 
+// -------------------------------------------------------------
+// ENGINE UPDATE NOTIFICATION & DOWNLOAD MANAGER
+// -------------------------------------------------------------
+let updatesStatus = null;
+let downloadPollInterval = null;
+
+async function loadUpdatesStatus() {
+  try {
+    const res = await fetch('/api/updates/status');
+    const data = await res.json();
+    if (data.success) {
+      updatesStatus = data;
+      renderUpdatesNotification();
+    }
+  } catch (e) {
+    console.warn('Failed to load updates status:', e);
+  }
+}
+
+function renderUpdatesNotification() {
+  const badge = document.getElementById('topbar-update-alert');
+  const badgeCount = document.getElementById('updates-count-badge');
+  const container = document.getElementById('engine-updates-container');
+
+  const total = updatesStatus?.totalUpdatesAvailable || 0;
+  if (badge && badgeCount) {
+    if (total > 0) {
+      badge.classList.remove('hidden');
+      badgeCount.textContent = total;
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  if (!container || !updatesStatus?.engines) return;
+
+  const engines = updatesStatus.engines;
+  const list = [
+    { key: 'chrome', data: engines.chrome, icon: 'fa-brands fa-chrome', color: '#f59e0b' },
+    { key: 'orbita', data: engines.orbita, icon: 'fa-solid fa-shield-halved', color: 'var(--primary)' },
+    { key: 'camoufox', data: engines.camoufox, icon: 'fa-solid fa-shield-cat', color: '#a855f7' }
+  ];
+
+  let html = '<div class="engine-updates-grid">';
+  list.forEach(item => {
+    const e = item.data;
+    if (!e) return;
+    const isUpdate = Boolean(e.updateAvailable);
+    const installedText = e.installed || 'Not installed';
+    const latestText = e.latest || 'Latest';
+    const sizeText = e.sizeMb ? ` (~${e.sizeMb} MB)` : '';
+
+    html += `
+      <div class="engine-update-card ${isUpdate ? 'has-update' : ''}">
+        <div class="engine-update-card-header">
+          <div class="engine-update-card-title" style="color: ${item.color}">
+            <i class="${item.icon}"></i>
+            <span>${escapeHtml(e.name || item.key)}</span>
+          </div>
+          <span class="status-pill ${isUpdate ? 'active' : 'ready'}" style="${isUpdate ? 'background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);' : ''}">
+            ${isUpdate ? '⚡ Update Available' : (e.installed ? '✓ Up to Date' : 'Not Installed')}
+          </span>
+        </div>
+        <div class="version-comparison-row">
+          <span><strong>Installed:</strong> ${escapeHtml(installedText)}</span>
+          <span><strong>Latest:</strong> ${escapeHtml(latestText)}</span>
+        </div>
+        <div class="flex-row gap-2 mt-1">
+          ${isUpdate ? `
+            <button class="btn btn-sm btn-primary" onclick="downloadEngineUpdate('${item.key}', '${escapeHtml(e.name)}', '${escapeHtml(latestText)}')">
+              <i class="fa-solid fa-download"></i> Download & Install ${sizeText}
+            </button>
+          ` : `
+            <button class="btn btn-sm btn-secondary" onclick="downloadEngineUpdate('${item.key}', '${escapeHtml(e.name)}', '${escapeHtml(latestText)}')">
+              <i class="fa-solid fa-arrows-rotate"></i> Re-download / Repair
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+async function triggerCheckUpdates() {
+  const icon = document.getElementById('check-updates-icon');
+  if (icon) icon.classList.add('fa-spin');
+  showToast('Checking online version registries...', 'info', 2000);
+
+  try {
+    const res = await fetch('/api/updates/check', { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      await loadUpdatesStatus();
+      await loadSystemInfo();
+      showToast('Engine version check complete!', 'success', 2500);
+    }
+  } catch (e) {
+    showToast('Failed to check updates: ' + e.message, 'error');
+  } finally {
+    if (icon) icon.classList.remove('fa-spin');
+  }
+}
+
+async function downloadEngineUpdate(key, name, version) {
+  const confirmed = window.confirm(`Download and install ${name} (v${version})?\n\nThe engine will be downloaded and configured automatically.`);
+  if (!confirmed) return;
+
+  const progressWrap = document.getElementById('download-progress-container');
+  const bar = document.getElementById('download-progress-bar');
+  const msg = document.getElementById('download-progress-msg');
+  const pct = document.getElementById('download-progress-pct');
+
+  if (progressWrap) progressWrap.classList.remove('hidden');
+  if (bar) bar.style.width = '10%';
+  if (msg) msg.textContent = `Starting download for ${name}...`;
+  if (pct) pct.textContent = '10%';
+
+  showToast(`Initiating download for ${name}...`, 'info');
+
+  try {
+    const res = await fetch('/api/updates/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engine: key })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to start download');
+
+    if (downloadPollInterval) clearInterval(downloadPollInterval);
+    downloadPollInterval = setInterval(async () => {
+      try {
+        const pRes = await fetch('/api/updates/progress');
+        const prog = await pRes.json();
+        if (bar) bar.style.width = `${prog.percent || 10}%`;
+        if (pct) pct.textContent = `${prog.percent || 10}%`;
+        if (msg) msg.textContent = prog.message || 'Processing...';
+
+        if (prog.status === 'done') {
+          clearInterval(downloadPollInterval);
+          if (bar) bar.style.width = '100%';
+          if (pct) pct.textContent = '100%';
+          if (progressWrap) setTimeout(() => progressWrap.classList.add('hidden'), 3500);
+          showToast(`${name} installed and ready!`, 'success', 4000);
+          await loadUpdatesStatus();
+          await loadSystemInfo();
+        } else if (prog.status === 'error') {
+          clearInterval(downloadPollInterval);
+          showToast(`Download failed: ${prog.message}`, 'error', 6000);
+        }
+      } catch (err) {
+        clearInterval(downloadPollInterval);
+      }
+    }, 700);
+  } catch (e) {
+    showToast('Download error: ' + e.message, 'error');
+    if (progressWrap) progressWrap.classList.add('hidden');
+  }
+}
+
 // Global scope bindings for inline action buttons
 window.startSingleProfile = startSingleProfile;
 window.stopSingleProfile = stopSingleProfile;
@@ -1430,6 +1599,8 @@ window.switchView = switchView;
 window.testProxyFromRow = testProxyFromRow;
 window.testFirstProfileWithUrl = testFirstProfileWithUrl;
 window.testFirstProfileWithEngine = testFirstProfileWithEngine;
+window.triggerCheckUpdates = triggerCheckUpdates;
+window.downloadEngineUpdate = downloadEngineUpdate;
 
 // Safe Init
 if (document.readyState === 'loading') {

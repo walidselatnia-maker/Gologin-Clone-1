@@ -1,5 +1,29 @@
-const puppeteer = require('./node_modules/puppeteer-core');
+const puppeteer = require('puppeteer-core');
+const fs = require('fs');
+const path = require('path');
 const { spawn } = require('child_process');
+
+function getChromeExecutable() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+  ].filter(Boolean);
+
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  const userHome = process.env.HOME || process.env.USERPROFILE || '';
+  const orbita146 = path.join(userHome, '.gologin', 'browser', 'orbita-browser-146', process.platform === 'win32' ? 'chrome.exe' : 'chrome');
+  if (fs.existsSync(orbita146)) return orbita146;
+  return 'google-chrome';
+}
 
 async function testUI() {
   console.log('--- STARTING COMPLETE UI & UX AUTOMATION TEST ---');
@@ -13,7 +37,7 @@ async function testUI() {
 
   let browser;
   try {
-    const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+    const chromePath = getChromeExecutable();
     browser = await puppeteer.launch({
       executablePath: chromePath,
       headless: 'new',
